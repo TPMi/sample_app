@@ -50,6 +50,21 @@ describe UsersController do
         response.should have_selector("a", :href => "/users?page=2", :content => "2")
         response.should have_selector("a", :href => "/users?page=2", :content => "Next")
       end
+      
+      it "should not show 'delete' links for non-admin users" do
+        get :index
+        @users[0..2].each do |user|
+          response.should_not have_selector("a", :href => "/users/#{user.id}", :title => "Delete #{user.name}", :content => "delete")
+        end
+      end        
+      
+      it "should show 'delete' links for admin users" do
+        test_sign_in(Factory(:user, :email => "admin@example.com", :admin => true))
+        get :index
+        @users[0..2].each do |user|
+          response.should have_selector("a", :href => "/users/#{user.id}", :title => "Delete #{user.name}", :content => "delete")
+        end
+      end
     end
   end
 
@@ -116,6 +131,12 @@ describe UsersController do
       get :new
       response.should have_selector("input[name='user[password_confirmation]'][type='password']")
     end
+    
+    it "should redirect to root path if the user is signed in" do
+      test_sign_in(Factory(:user))
+      get :new
+      response.should redirect_to(root_path)
+    end
   end
 
   describe "POST 'create'" do
@@ -168,6 +189,12 @@ describe UsersController do
         post :create, :user => @attr
         controller.should be_signed_in
       end
+    end
+    
+    it "should redirect to root path if the user is signed in" do
+      test_sign_in(Factory(:user))
+      get :new
+      response.should redirect_to(root_path)
     end
   end
 
@@ -307,8 +334,8 @@ describe UsersController do
     describe "as an admin user" do
 
       before(:each) do
-        admin = Factory(:user, :email => "admin@example.com", :admin => true)
-        test_sign_in(admin)
+        @admin = Factory(:user, :email => "admin@example.com", :admin => true)
+        test_sign_in(@admin)
       end
 
       it "should destroy the user" do
@@ -320,6 +347,12 @@ describe UsersController do
       it "should redirect to the users page" do
         delete :destroy, :id => @user
         response.should redirect_to(users_path)
+      end
+      
+      it "should not allow destroying himself" do
+        lambda do
+          delete :destroy, :id => @admin
+        end.should_not change(User, :count).by(-1)
       end
     end
   end
