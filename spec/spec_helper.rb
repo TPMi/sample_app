@@ -81,3 +81,14 @@ end
 #   # instead of true.
 #   config.use_transactional_fixtures = true
 # end
+# 
+# def test_sign_in(user)
+#   controller.sign_in(user)
+# end
+# 
+# def integration_sign_in(user)
+#   visit signin_path
+#   fill_in :email, :with => user.email
+#   fill_in :password, :with => user.password
+#   click_button
+# end
